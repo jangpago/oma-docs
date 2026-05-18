@@ -1,0 +1,252 @@
+---
+title: ADR 사례
+description: 실제 ADR은 이렇게 생겼다 — 하나를 깊게 읽어본다
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+3개월 뒤 코드를 봤을 때, ADR 18개가 있으면 1분 안에 프로젝트의 '왜'를 복원할 수 있다.
+
+## ADR 하나를 깊게 보기
+
+메신저 도메인의 실제 ADR 본문이다. 나머지 결정들이 이 ADR에 어떻게 영향을 받는지 보면, ADR이 혼자 서 있지 않다는 걸 알 수 있다.
+
+### ADR-0006. Feature 기반 모듈 구조
+
+```markdown
+# ADR-0006. Feature 기반 모듈 구조
+
+## 상태
+승인됨
+
+## 날짜
+2025-08-10
+
+## 맥락
+
+메신저 앱의 모듈 구조를 결정해야 한다.
+
+- 팀 규모: 5명
+- 동시 개발 기능: 3개 이상
+- 함수 규모: 10개 이상의 주요 기능
+
+모듈 경계를 잘못 잡으면 기능 간 의존성이 꼬여서 6개월 뒤에 분리가 불가능해진다.
+예: A가 chat에서 message를 정의하고, B가 notification에서 message를 다시 정의하면,
+chat을 고칠 때마다 notification도 함께 고쳐야 한다.
+
+## 고려한 대안
+
+### 옵션 A: Layer-based (presentation / domain / data)
+
+```
+app/
+├── presentation/
+│   ├── activity/ChatActivity.kt
+│   ├── activity/CallActivity.kt
+│   └── ...
+├── domain/
+│   ├── usecase/ChatUsecase.kt
+│   ├── entity/Message.kt
+│   └── ...
+└── data/
+    ├── repository/ChatRepository.kt
+    └── ...
+```
+
+- **장점**: 전통적이고 익숙함
+- **문제**: 기능이 10개가 되면 presentation/ 폴더가 10개 파일을 포함하고, domain/ 폴더는 20개가 된다
+- **실패 모드**: 3인 이상 동시 작업 시 매번 같은 폴더에서 작업해서 merge 충돌 빈번
+- **결정**: 거부
+
+### 옵션 B: Feature-based
+
+```
+app/
+├── feature/
+│   ├── chat/
+│   │   ├── presentation/ChatActivity.kt
+│   │   ├── domain/ChatUsecase.kt
+│   │   ├── data/ChatRepository.kt
+│   │   └── model/Message.kt
+│   ├── call/
+│   │   ├── presentation/CallActivity.kt
+│   │   ├── domain/CallUsecase.kt
+│   │   └── ...
+│   ├── media/
+│   ├── notification/
+│   ├── analytics/
+│   └── ...
+├── core/
+│   ├── common/Utils.kt
+│   └── network/ApiClient.kt
+```
+
+- **장점**: 기능 단위 독립 개발 가능. A가 chat/ 작업할 때 B는 call/ 작업하면 충돌 없음
+- **장점**: 새 기능 추가 시 새 폴더만 생기고 기존 코드는 건드리지 않음
+- **장점**: 기능 삭제 시 폴더 전체 삭제하면 됨
+- **결정**: 채택
+
+### 옵션 C: Hybrid (Layer + Feature)
+
+```
+app/
+├── presentation/
+│   ├── chat/
+│   ├── call/
+│   └── ...
+├── domain/
+│   ├── chat/
+│   ├── call/
+│   └── ...
+└── data/
+    ├── chat/
+    ├── call/
+    └── ...
+```
+
+- **문제**: Layer와 Feature를 동시에 관리해야 함. 복잡도 2배
+- **문제**: 새 개발자가 파일을 찾기 어려움
+- **문제**: 장점이 A와 B의 장점을 섞은 것 정도인데, 복잡도는 더 높음
+- **결정**: 거부
+
+## 결정
+
+Feature-based 모듈 구조를 채택한다.
+
+- 기본 단위: 사용자 관점의 기능 (chat, call, media, notification, analytics, settings)
+- 각 feature 내부 구조: presentation / domain / data 레이어는 유지 (선택)
+- 공통 유틸: core/ 모듈 (database, network, crypto, logging 등)
+- 크로스모듈 의존성: 명시적 interface만 import. 구현부는 import하지 않음
+
+## 영향
+
+### 좋아지는 것
+- 3인 이상 동시 개발이 충돌 없이 가능
+- 기능 추가/삭제 시 다른 모듈 영향 최소
+- 새 팀원 온보딩 시 "너는 chat 모듈 담당" 하면 chat/ 폴더만 이해하면 됨
+
+### 잃는 것
+- 공통 로직 발견이 어려울 수 있음. chat과 call이 비슷한 로직을 중복으로 구현할 수 있음
+- 공통 로직을 core/로 추출할 때 feature → core의 의존성 관리 필요
+- Presentation 레이어가 여러 폴더에 분산되면 디자인 시스템 일관성 관리 필요
+
+### 이후 운영
+- 매월 기능 회고 때 core/ 후보를 검토 (중복 로직)
+- 새 기능은 자동으로 새 feature/ 디렉토리 생성
+
+## 작성자 / 승인자
+- 작성: A (아키텍트)
+- 승인: 팀 전체 (2025-08-10)
+
+## 재검토 일정
+6개월 뒤 모듈 경계 안정성 평가 (2026-02-10)
+```
+
+---
+
+## 이 ADR이 다른 결정들을 어떻게 제약했나
+
+ADR-0006(모듈 구조)이 확정되는 순간, 다른 결정들의 선택지가 자동으로 정해진다.
+
+| 다음 ADR | 원래 고민 | ADR-0006 이후 선택 | 이유 |
+|---|---|---|---|
+| **ADR-0007** (메시지 DB) | SQLite? Realm? Room? | Room (SQL) + data/ 격리 | feature-based이므로 chat/data/에 DB 로직을 집중. ORM 필수 |
+| **ADR-0008** (E2E 암호화) | Signal Protocol 어디 두지? | chat/ 모듈 내 encryption layer | chat이 독립 모듈이므로, 암호화도 chat 내부에 격리 |
+| **ADR-0009** (메시지 동기화) | Server-first? Client-first? | Server 중심 + local cache | chat과 call이 독립이므로 각 feature가 서버와 직접 동기화하되, core/cache로 공용 캐시 관리 |
+| **ADR-0010** (Push 알림) | Silent? Loud? | Silent + 클라이언트 Pull | notification/ 모듈이 독립이므로 Push 처리를 notification/domain에 격리 |
+| **ADR-0012** (미디어 파이프라인) | 미디어 처리 어디서? | media/ 모듈 (독립 개발) | media/가 자기 presentation/domain/data를 가지고 완전 독립 개발 가능 |
+
+**핵심**: 비가역 결정은 혼자 서 있지 않는다. 한 ADR이 3개월 뒤의 6개 ADR을 동시에 제약한다. 따라서 초기 결정이 중요하다.
+
+---
+
+## 의무 대상
+
+다음은 반드시 ADR로 남긴다:
+
+- **기술 스택** — 언어, 프레임워크, 주요 라이브러리
+- **모듈 경계와 의존성 방향**
+- **핵심 SDK** (결제, 인증, 암호화 등)
+- **환경 분리** (개발/스테이징/프로덕션)
+- **API 통신 패턴** (REST vs GraphQL, 에러 처리 방식)
+- **상태 관리** (Redux, MobX, ViewModel 등)
+- **보안 플로우** (본인인증, 토큰 갱신, 권한 검사)
+- **CI/CD 및 배포 흐름**
+
+## 선택 대상
+
+팀 합의로 결정한다:
+
+- 소규모 라이브러리 추가 (analytics 라이브러리, 로깅 라이브러리 등)
+- 코딩 컨벤션 (변수명 규칙, 함수 길이 제한 등)
+- 디렉토리 미세 조정 (utils vs common vs core)
+
+---
+
+## 메신저 도메인 예시
+
+| ADR | 결정 | 분류 |
+|---|---|---|
+| 0005 | Native 분리 개발 (iOS Swift / Android Kotlin) | 기술 스택 |
+| 0006 | Feature-based 모듈 구조 | 모듈 구조 |
+| 0007 | 메시지 영속화 SQLite raw + 자체 mapper | DB |
+| 0008 | E2E 암호화 Signal Protocol (libsignal) | 보안 |
+| 0009 | 메시지 동기화 Server-Authoritative + Local-First Cache | 동기화 |
+| 0010 | Push Silent Push + 클라이언트 Pull | 알림 |
+| 0011 | WebRTC P2P 음성/영상 통화 | 통화 |
+| 0012 | 클라이언트 미디어 파이프라인 | 미디어 |
+| 0013 | Self-hosted 분석 이벤트 | 분석 |
+| 0014 | CI/CD Bitrise | CI/CD |
+
+## 금융 도메인 예시
+
+| ADR | 결정 | 분류 |
+|---|---|---|
+| 0015 | 클린 아키텍처 기반 멀티모듈 | 아키텍처 |
+| 0016 | 보안 SDK 통합 전략 | 보안 |
+| 0017 | AAR/Framework 관리 | 의존성 |
+| 0018 | DI Hilt 기반 | DI |
+| 0019 | 금융 본인인증 흐름 | 인증 |
+
+---
+
+## ADR 작성법
+
+```bash
+./scripts/adr new "제목"
+```
+
+또는 Claude Code에서:
+
+```bash
+/oma:adr new "제목"
+```
+
+### 과정
+
+1. **작성**: 번호 자동 증가, 날짜 자동 입력, 템플릿 제공
+2. **필수 필드**: 상태, 날짜, 맥락, 고려한 대안(최소 2개), 결정, 영향, 작성자/승인자, 재검토 일정
+3. **흐름**: 작성 → 팀 리뷰 → 승인 → 구현
+4. **대체 (Supersede)**: 새 ADR이 기존 결정을 대체하면, 기존 ADR 상태를 `Superseded by ADR-XXXX`로 변경
+
+### AI 보조
+
+- AI가 3~5개 대안과 장단점 제시
+- AI가 ADR 초안 작성
+- 사람(작성자/승인자)이 최종 리뷰 후 승인
+
+---
+
+## 다음
+
+<Cards>
+  <Card title="시나리오" href="/docs/scenarios">
+    실제 팀 협업에서 ADR이 어떻게 쓰이는지 본다
+  </Card>
+  <Card title="가이드" href="/docs/guides">
+    ADR 작성, 검증 실행, 도메인별 정책 설정
+  </Card>
+  <Card title="개념" href="/docs/concepts">
+    oma의 4개 장치가 각각 어떤 실패를 막는가
+  </Card>
+</Cards>

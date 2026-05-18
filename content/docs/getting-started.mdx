@@ -1,0 +1,137 @@
+---
+title: 시작하기
+description: 설치부터 첫 ADR까지, 10분 안에 끝낸다
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+10분이면 설치하고 첫 결정 하나를 ADR로 남기는 것까지 간다.
+
+## 설치
+
+### 1. 소스 받기
+
+```bash
+git clone https://wire.lgcns.com/bitbucket/scm/mobile-shared/oma.git ~/.oma
+```
+
+> clone이 안 되면 사내 Bitbucket 인증(SSH 키 또는 HTTPS PAT)을 먼저 확인한다.
+
+### 2. 설치 스크립트 실행
+
+```bash
+~/.oma/install.sh
+```
+
+이 스크립트가 하는 일:
+- `bin/oma` → `~/.local/bin/oma` 심볼릭 링크 (CLI)
+- `plugin/` → `~/.claude/plugins/oma` 심볼릭 링크 (Claude Code 사용자만)
+- `oma doctor` 자동 실행
+
+### 3. PATH 확인
+
+`oma` 명령이 안 되면 셸 프로필(`~/.zshrc` 또는 `~/.bashrc`)에 추가:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### 4. 설치 확인
+
+```bash
+oma doctor
+```
+
+설치, 인증, bootstrap 상태를 한 번에 확인한다. 문제가 있으면 복구 가이드가 나온다.
+
+## 프로젝트에 oma 켜기
+
+### 5. init
+
+자기 프로젝트로 이동 후:
+
+```bash
+cd <your-project>
+oma init --domain <financial|messenger|enterprise|other>
+```
+
+생성되는 파일:
+
+```
+your-project/
+├── .oma/config.yaml    ← 이 파일이 있어야 oma가 동작한다
+├── adr/
+│   └── template.md
+├── CLAUDE.md
+└── AGENTS.md
+```
+
+`.oma/config.yaml`이 없는 프로젝트에서는 oma가 아무 일도 하지 않는다. `init`이 곧 활성화다.
+
+## 첫 ADR 남기기
+
+### 6. 첫 비가역 결정 기록
+
+```bash
+oma adr new "기술 스택 선택"
+```
+
+파일이 `adr/0001-기술-스택-선택.md`에 생긴다. 3개월 뒤 새로 온 동료가 이걸 보고 1분 만에 결정 배경을 복원할 수 있다.
+
+## 첫 건강도 확인
+
+```bash
+oma check
+```
+
+profile 일관성, ADR 준수, 기준 이탈 여부를 빠르게 본다. 파일을 수정하지 않으니 부담 없이 돌린다.
+
+## 여기까지 왔으면
+
+기본 준비는 끝났다. 다음 단계는 프로젝트 상황에 따라 다르다.
+
+| 지금 상황 | 다음 |
+| --- | --- |
+| 스택, 모듈, SDK 같은 큰 결정을 잡아야 한다 | `oma architect` |
+| profile은 있고 첫 골격이 필요하다 | `oma skeleton` |
+| AI가 만든 결과가 의심된다 | `oma check` → `oma verify` |
+| 코드 작성 시마다 자동 점검을 걸고 싶다 | `oma strict on` ([자세히](/docs/hooks)) |
+
+## Claude Code 사용자
+
+Claude Code에서는 같은 명령을 슬래시 명령으로 쓸 수 있다:
+
+| CLI | Claude Code |
+|---|---|
+| `oma init` | `/oma:init` |
+| `oma check` | `/oma:check` |
+| `oma verify` | `/oma:verify` |
+| `oma adr new` | `/oma:adr new` |
+
+`install.sh`가 이미 Claude Code 플러그인도 설치했으니 별도 설정 없이 바로 쓸 수 있다.
+
+## 업데이트
+
+```bash
+cd ~/.oma && git pull && ./install.sh
+```
+
+## 막힐 때
+
+| 증상 | 해결 |
+|---|---|
+| `oma: command not found` | `export PATH="$HOME/.local/bin:$PATH"` 추가 |
+| clone 실패 | 사내 Bitbucket 인증 확인 (SSH 키 또는 HTTPS PAT) |
+| Claude Code에서 명령 안 됨 | `claude plugin list`에서 oma 확인. 없으면 `install.sh` 재실행 |
+
+<Cards>
+  <Card title="시나리오로 보기" href="/docs/scenarios">
+    oma가 실제 협업에서 어떻게 동작하는지
+  </Card>
+  <Card title="핵심 개념" href="/docs/concepts">
+    ADR-first, 정책, overlay — 왜 이렇게 만들었나
+  </Card>
+  <Card title="명령어 레퍼런스" href="/docs/commands">
+    10개 명령어의 전체 옵션과 사용법
+  </Card>
+</Cards>

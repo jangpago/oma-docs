@@ -1,0 +1,88 @@
+---
+title: 가이드
+description: 지금 상황에 맞는 oma 경로를 고른다
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+oma에는 진입점이 7개다. 자기 상황에 맞는 한 개만 쓰면 된다.
+
+## 빠른 진단
+
+| 지금 상황 | 경로 | 시나리오 |
+| --- | --- | --- |
+| 처음 적용하는 프로젝트다 | `/oma:init` | [S1](/docs/scenarios#s1-결제-sdk-어떻게-정하지) |
+| 되돌리기 어려운 결정을 앞뒀다 | `/oma:architect` 또는 `/oma:adr new` | [S1](/docs/scenarios#s1-결제-sdk-어떻게-정하지) |
+| profile은 있는데 골격이 없다 | `/oma:skeleton` | — |
+| 표준 모듈 시작점이 필요하다 | `/oma:template <type> <name>` | — |
+| AI 생성물이 의심된다 | `/oma:verify` | [S2](/docs/scenarios#s2-ai가-만든-결제-모듈-진짜-우리-코드가-맞나) |
+| 자동 사전 점검을 걸고 싶다 | `/oma:strict on` | — |
+| 새 멤버가 들어왔다 | `adr/` 디렉토리부터 본다 | [S3](/docs/scenarios#s3-3개월-뒤-새-멤버가-들어왔다) |
+
+## 기본 흐름
+
+```
+init → architect → skeleton → (개발) → check → verify
+```
+
+| 단계 | 목적 |
+| --- | --- |
+| init | 활성화 파일과 기준선을 만든다 |
+| architect | 비가역 결정을 profile과 ADR로 잠근다 |
+| skeleton | profile 기반 골격을 만든다 |
+| check | 빠른 건강도 스캔 (read-only) |
+| verify | 정책 기반 심층 검증 |
+
+## 상황별 가이드
+
+### "처음 적용한다"
+1. `/oma:init --domain <domain>`으로 활성화
+2. `/oma:doctor`로 환경 확인
+3. 첫 비가역 결정이 생기면 `/oma:adr new`
+
+→ [시작하기](/docs/getting-started)에서 10분 안에 끝낸다
+
+### "큰 결정을 앞뒀다"
+SDK, 모듈 구조, 인증 플로우 같은 결정이 있을 때:
+1. `/oma:architect`로 아키텍트 모드 진입
+2. 결정마다 ADR 작성
+3. `architect done`으로 모드 종료
+
+→ [시나리오 S1](/docs/scenarios#s1-결제-sdk-어떻게-정하지)과 같은 상황
+
+### "AI가 만든 코드가 불안하다"
+1. `/oma:check`로 빠른 스캔
+2. `/oma:verify`로 심층 검증
+3. 결과에서 `pass: false` 항목 확인
+
+→ [시나리오 S2](/docs/scenarios#s2-ai가-만든-결제-모듈-진짜-우리-코드가-맞나)와 같은 상황
+
+### "새 멤버가 합류했다"
+1. `adr/` 디렉토리에서 ADR 목록 읽기
+2. `project_profile.yaml`로 현재 상태 확인
+3. `/oma:check`로 프로젝트 건강도 확인
+
+→ [시나리오 S3](/docs/scenarios#s3-3개월-뒤-새-멤버가-들어왔다)와 같은 상황
+
+## 초기 단계 핵심 위험
+
+| 위험 | 시점 | 대응 |
+| --- | --- | --- |
+| 잘못된 기술 스택 | 초기 | 기술 스택 결정 체크리스트 |
+| 잘못된 모듈 경계 | 1-2주 | skeleton + architect review |
+| AI 환각 코드 | 2-4주 | `/oma:verify` |
+| 권한/보안 흐름 오류 | 2-3개월 | industry 정책 점검 |
+
+## 다음
+
+<Cards>
+  <Card title="시나리오" href="/docs/scenarios">
+    실제 협업에서 oma가 어떻게 보이는지, 3가지 상황
+  </Card>
+  <Card title="시작하기" href="/docs/getting-started">
+    팀원이 oma를 설치하고 init하는 법
+  </Card>
+  <Card title="명령어" href="/docs/commands">
+    init, adr, verify, check, doctor 실행 명령 체계
+  </Card>
+</Cards>

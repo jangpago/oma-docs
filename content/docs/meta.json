@@ -1,0 +1,20 @@
+{
+  "title": "문서",
+  "pages": [
+    "---시작---",
+    "index",
+    "scenarios",
+    "getting-started",
+    "---이해---",
+    "concepts",
+    "guides",
+    "---실행---",
+    "verification",
+    "commands",
+    "hooks",
+    "policies",
+    "---참조---",
+    "adr-examples",
+    "reference"
+  ]
+}

@@ -1,0 +1,177 @@
+---
+title: 명령어
+description: 10개 명령어 — 언제 어떤 걸 쓰는가
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+10개 명령이 있지만, 보통 한 프로젝트에서 **init / adr / verify** 3개를 가장 자주 쓴다. 나머지는 특정 상황에만 필요하다.
+
+## 흐름
+
+```
+init → architect → skeleton → template → (개발) → check → verify
+```
+
+## 명령어 레퍼런스
+
+### init
+
+**언제 쓰나**  
+새 프로젝트에 oma를 처음 켤 때. 한 번만 실행한다.
+
+```bash
+/oma:init --domain <financial|messenger|enterprise|other>
+```
+
+`.oma/config.yaml` 활성화 파일, `adr/` 디렉토리, `CLAUDE.md`/`AGENTS.md` 보일러플레이트를 생성한다. 이 파일이 없으면 oma는 동작하지 않는다.
+
+---
+
+### architect
+
+**언제 쓰나**  
+기술 스택, 모듈 경계, SDK 같은 비가역 결정을 잡아야 할 때. → [시나리오 S1](/docs/scenarios#s1-결제-sdk-어떻게-정하지)
+
+```bash
+/oma:architect          # 진입
+/oma:architect done     # 종료
+```
+
+프로젝트 단계 감지, 체크리스트 로드, `project_profile.yaml` 생성/갱신. 비가역 결정마다 ADR이 필수다.
+
+---
+
+### skeleton
+
+**언제 쓰나**  
+profile 기반 빌드 가능한 골격이 필요할 때.
+
+```bash
+/oma:skeleton --profile project_profile.yaml
+```
+
+Platform overlay 기반 골격을 생성한다. 기능 화면이나 비즈니스 로직은 만들지 않는다. profile 없으면 거부된다.
+
+---
+
+### template
+
+**언제 쓰나**  
+표준 모듈 시작점이 필요할 때.
+
+```bash
+/oma:template <type> <name>
+```
+
+Overlay가 정의한 타입 범위 안에서 모듈 시작점을 생성한다.
+
+---
+
+### adr
+
+**언제 쓰나**  
+되돌리기 어려운 결정을 기록할 때. 구현 전에 먼저 ADR을 만든다. → [시나리오 S1](/docs/scenarios#s1-결제-sdk-어떻게-정하지)
+
+```bash
+/oma:adr new "결제 SDK 선택"
+```
+
+번호 자동 채번, 표준 템플릿(상태, 맥락, 결정, 대안, 영향, 작성자/승인자)으로 초안 생성. 작성자/승인자는 실제 책임자를 명시한다.
+
+---
+
+### check
+
+**언제 쓰나**  
+프로젝트 상태를 빠르게 보고 싶을 때.
+
+```bash
+/oma:check
+/oma:check --json
+```
+
+Profile 일관성, ADR 준수, 기준 이탈을 스캔한다. 파일 수정 없음. verify 전 사전 선별용.
+
+---
+
+### doctor
+
+**언제 쓰나**  
+환경/설정 문제를 진단할 때.
+
+```bash
+/oma:doctor
+```
+
+설치 상태, 인증, bootstrap, 복구 가이드를 진단한다.
+
+---
+
+### verify
+
+**언제 쓰나**  
+AI 코드를 심층 검증할 때. → [시나리오 S2](/docs/scenarios#s2-ai가-만든-결제-모듈-진짜-우리-코드가-맞나)
+
+```bash
+/oma:verify
+/oma:verify --scope ./src/payment/
+/oma:verify --policy sdk-hallucination
+/oma:verify --json      # CI/감사용
+/oma:verify --fix       # 개선 가이드
+```
+
+Base → industry → environment → project 순으로 정책을 읽고 pass/fail + evidence를 출력한다. Check 후 실행 권장. → [검증](/docs/verification)
+
+---
+
+### policy
+
+**언제 쓰나**  
+프로젝트 커스텀 정책을 관리할 때.
+
+```bash
+/oma:policy
+```
+
+정책 추가/수정/비활성화. 변경은 ADR 또는 근거를 남긴다.
+
+---
+
+### strict
+
+**언제 쓰나**  
+AI 코드 작성 시마다 자동 사전 점검을 강화하고 싶을 때.
+
+```bash
+/oma:strict on       # 엄격 모드 (자동 점검 강화)
+/oma:strict off      # 기본 모드
+/oma:strict status   # 현재 상태
+```
+
+ADR 위반, 존재하지 않는 SDK 호출, 권한 일관성 등을 자동 점검한다. Claude Code 재시작 필요.
+
+---
+
+## 명령 사이 의존성
+
+| 질문 | 답 |
+|---|---|
+| init 없이 verify? | `.oma/config.yaml` 없으면 통과만 시킨다 |
+| architect 없이 skeleton? | profile 없으면 거부된다 |
+| check 없이 verify? | 되지만, check 먼저가 효율적이다 |
+| 어느 명령부터 시작? | init. 다음은 architect 또는 adr |
+
+---
+
+<Cards>
+  <Card title="검증" href="/docs/verification">
+    check와 verify — AI 생성물을 증거로 판정한다
+  </Card>
+  <Card title="시나리오" href="/docs/scenarios">
+    ADR-first, 검증 체감, 흔적 남김 — 3가지 상황
+  </Card>
+  <Card title="시작하기" href="/docs/getting-started">
+    30초 설치부터 첫 명령까지
+  </Card>
+</Cards>

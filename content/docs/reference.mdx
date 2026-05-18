@@ -1,0 +1,187 @@
+---
+title: "레퍼런스"
+description: "필요할 때 찾는 페이지 — 디렉토리 구조, 도메인, Codex CLI, 측정 지표"
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+필요할 때 찾는 페이지다. 디렉토리 구조, 도메인 분류, 측정 지표, Codex CLI 사용법을 담았다.
+
+## 디렉토리 구조
+
+```text
+oma/
+├── CLAUDE.md                        # Claude Code 진입점
+├── AGENTS.md                        # cross-tool 규칙 정본
+├── ARCHITECTURE.md                  # v8 5층 아키텍처
+├── INDEX.md                         # 한 페이지 인덱스
+├── adr/                             # 의사결정 기록 + 인덱스
+├── scripts/adr                      # ADR 생성 스크립트
+├── bin/                             # bin/oma CLI (도구 독립 결정적 surface)
+│   ├── oma                          # 단일 진입점 (init/check/verify/doctor/adr)
+│   └── lib/                         # 공용 라이브러리
+├── plugin/                          # Claude Code 표준 자산 + 정책/스키마 정본
+│   ├── commands/                    # 슬래시 명령
+│   ├── hooks/                       # 자동 점검
+│   ├── policies/                    # 정책 카탈로그 (base + industry + environment + project)
+│   ├── overlays/                    # 선택한 platform/industry별 명령 가이드
+│   ├── rules/                       # rule catalog (CLI ↔ plugin 공유)
+│   └── schemas/                     # evidence JSON 스키마
+├── plugin-codex/                    # Codex CLI 1급 지원 자산
+├── plugin-opencode/                 # OpenCode 호환 자산 (추후 지원)
+├── templates/ci/                    # CI 재사용 템플릿
+└── .github/workflows/               # 본 저장소 라이브 CI
+```
+
+## 도메인 분류
+
+| 도메인 | 특성 | 리스크 |
+| --- | --- | --- |
+| financial | 망분리, 본인인증, 보안 SDK, 감리 | 전자금융감독규정, ISMS-P |
+| messenger | E2E 암호화, 통화, 미디어, 푸시 | 실시간성, 대규모 트래픽 |
+| enterprise | MDM, 멀티 스토어/배포 | 조직별 환경 편차 |
+| other | 프로젝트별 커스텀 | 초기 정의 부재 |
+
+도메인은 자유 입력이다. 프로젝트에 맞는 이름을 정하면 된다.
+
+## Overlay 4-tier
+
+`verify`는 정책을 다음 4단계로 읽는다. 더 구체적인 단계가 우선한다.
+
+1. **Base**: 모든 프로젝트 공통 원칙
+2. **Industry**: 선택한 산업군/플랫폼 제약 (예: financial, messenger)
+3. **Environment**: 운영 환경 제약 (예: korean-si, startup, internal-tool)
+4. **Project**: 개별 프로젝트 커스텀 정책
+
+충돌 시 ADR에 우선순위와 이유를 명시한다.
+
+## 측정 지표 (참고)
+
+다음은 oma를 도입했을 때 기대하는 목표치 예시다. 실제 결과는 프로젝트에 따라 다르다.
+
+### 속도
+
+| 지표 | 정의 | 목표 |
+| --- | --- | --- |
+| 초기 셋업 시간 | 요건 → 첫 빌드 | 2주 → 1주 |
+| 모듈 생성 시간 | 표준 모듈 골격 | 1일 → 2시간 |
+| 온보딩 시간 | 신규 멤버 → 첫 PR | -50% |
+
+### 품질
+
+| 지표 | 정의 | 목표 |
+| --- | --- | --- |
+| 아키텍처 안정성 | 6개월 뒤 초기 결정 유지율 | ≥85% |
+| AI 환각 검출율 | production 전 포착 | ≥90% |
+| AI 코드 수용율 | 수정 없이 merge | 30% → 60% |
+| ADR 커버리지 | 비가역 결정 중 ADR 비율 | 80% → 95% |
+
+### 효율
+
+| 지표 | 정의 | 목표 |
+| --- | --- | --- |
+| PR 리뷰 시간 | 작성 → merge (p50/p95) | -30%/-15% |
+| 토큰 비용 | 표준 모듈당 LLM 비용 | -40% |
+
+## Codex CLI
+
+Codex CLI는 1급으로 지원한다. `bin/oma` CLI와 `AGENTS.md` 프롬프트로 운영하며, Claude Code 슬래시 명령과 동일한 기능을 제공한다.
+
+### 명령어 매핑
+
+| Claude Code | Codex CLI | 기능 |
+| --- | --- | --- |
+| `/oma:init` | `oma init` | 프로젝트 초기화 |
+| `/oma:check` | `oma check` | 구조 점검 |
+| `/oma:verify` | `oma verify` | 심층 검증 |
+| `/oma:adr new` | `oma adr new` | ADR 생성 |
+| `/oma:doctor` | `oma doctor` | 환경 진단 |
+
+### 사용법
+
+```bash
+# PATH에 bin/oma 추가
+export PATH="<oma-repo>/bin:$PATH"
+
+# 프로젝트로 이동
+cd <your-project>
+
+# 초기화
+oma init --domain financial
+
+# 환경 점검
+oma doctor
+
+# 구조 검사 (JSON 출력 지원)
+oma check --json
+
+# ADR 생성
+oma adr new "첫 결정"
+```
+
+### 2단계 검증
+
+- **결정적 구조 검사**: `bin/oma`가 수행 (rule catalog + evidence schema 동일)
+- **시맨틱 리뷰**: Codex 프롬프트가 보강 (SDK 환각, 정책 의미 평가)
+
+두 단계가 함께 이루어져야 완전한 검증이다.
+
+### 다른 도구
+
+OpenCode, Cursor는 아직 지원 대기 상태다. 1급 승격은 별도 결정이 필요하다.
+
+## 참조 아키텍처 (내부 참고)
+
+다음은 oma가 내부적으로 구분하는 구성 요소다. 명령이 어떤 영역을 다루는지 이해할 때 참고할 수 있다.
+
+```text
+사용자 인터페이스 (3개)
+├─ Claude Code Plugin    (개발자 로컬)
+├─ Web Dashboard          (리뷰/승인/ADR/아키텍트 워크플로우)
+└─ CI/CD Integration      (GitHub Actions/Bitrise/Codemagic)
+
+하네스 코어
+├─ Risk Classifier
+├─ Context Engine
+├─ AI 생성물 검증기
+├─ Project Skeleton Generator
+├─ Module Template Library
+├─ ADR Engine
+├─ SDK Lock-in Analyzer
+├─ Evidence Bundler
+├─ Trust Tier Engine
+├─ Industry 정책 점검기
+└─ 릴리스 사전 점검
+
+데이터 계층
+├─ Project Profile Store
+├─ ADR Store
+├─ Evidence Store
+├─ Policy Catalog (base + industry + environment + project)
+└─ Template Registry
+```
+
+## 산출물 규칙
+
+- 한국어 우선 작성
+- 정책 문서는 원칙 → 규칙 → 예외 순서
+- 도구 전용 의존성 금지
+- 비가역 결정의 최종 사인오프는 사람 책임
+
+## 타겟 환경
+
+| 환경 | 상태 |
+| --- | --- |
+| Claude Code | 1급 (슬래시 명령, 자동 점검) |
+| Codex CLI | 1급 (`bin/oma` + `AGENTS.md`) |
+| `bin/oma` | 도구 독립 CLI |
+| OpenCode, Cursor | 지원 대기 |
+| CI | `templates/ci/` 재사용 템플릿 |
+
+cross-tool 정본은 루트 `AGENTS.md`다. 어떤 AI 도구를 쓰더라도 결정 규칙(ADR, 정책, 증거)은 동일하게 적용된다.
+
+<Cards>
+  <Card title="시작하기" href="/docs/getting-started" />
+  <Card title="명령" href="/docs/commands" />
+  <Card title="시나리오" href="/docs/scenarios" />
+</Cards>
