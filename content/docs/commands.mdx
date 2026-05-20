@@ -24,7 +24,9 @@ init → architect → skeleton → template → (개발) → check → verify
 /oma:init --domain <financial|messenger|enterprise|other>
 ```
 
-`.oma/config.yaml` 활성화 파일, `adr/` 디렉토리, `CLAUDE.md`/`AGENTS.md` 보일러플레이트를 생성한다. 이 파일이 없으면 oma는 동작하지 않는다.
+`.oma/config.yaml` 활성화 파일, `adr/` 디렉토리, `CLAUDE.md`/`AGENTS.md`/`CONTEXT.md` 보일러플레이트를 생성한다. 이 파일이 없으면 oma는 동작하지 않는다.
+
+`CONTEXT.md`는 도메인 용어 정본(glossary only)으로 생성된다. 기존 ADR이 있는 프로젝트에서는 init이 ADR 본문에서 용어 후보를 추출해 CONTEXT.md에 이전하는 L2 마이그레이션 플로우를 제안한다.
 
 ---
 

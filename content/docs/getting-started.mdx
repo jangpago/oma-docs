@@ -24,8 +24,8 @@ git clone https://wire.lgcns.com/bitbucket/scm/mobile-shared/oma.git ~/.oma
 ```
 
 이 스크립트가 하는 일:
-- `bin/oma` → `~/.local/bin/oma` 심볼릭 링크 (CLI)
-- `plugin/` → `~/.claude/plugins/oma` 심볼릭 링크 (Claude Code 사용자만)
+- `~/.local/bin/oma` launcher 생성 (CLI)
+- Claude Code CLI가 있으면 local marketplace 등록 + `oma@oma-marketplace` 플러그인 설치
 - `oma doctor` 자동 실행
 
 ### 3. PATH 확인
@@ -63,7 +63,8 @@ your-project/
 ├── adr/
 │   └── template.md
 ├── CLAUDE.md
-└── AGENTS.md
+├── AGENTS.md
+└── CONTEXT.md          ← 도메인 용어 정본 (glossary only, ADR 0058 §A)
 ```
 
 `.oma/config.yaml`이 없는 프로젝트에서는 oma가 아무 일도 하지 않는다. `init`이 곧 활성화다.
@@ -108,7 +109,7 @@ Claude Code에서는 같은 명령을 슬래시 명령으로 쓸 수 있다:
 | `oma verify` | `/oma:verify` |
 | `oma adr new` | `/oma:adr new` |
 
-`install.sh`가 이미 Claude Code 플러그인도 설치했으니 별도 설정 없이 바로 쓸 수 있다.
+`install.sh`가 `claude plugin marketplace add ~/.oma/plugin`과 `claude plugin install oma@oma-marketplace`를 수행한다. 이미 열려 있던 Claude Code 세션에서는 `/reload-plugins`를 실행하거나 세션을 다시 열면 된다.
 
 ## 업데이트
 
@@ -122,7 +123,7 @@ cd ~/.oma && git pull && ./install.sh
 |---|---|
 | `oma: command not found` | `export PATH="$HOME/.local/bin:$PATH"` 추가 |
 | clone 실패 | 사내 Bitbucket 인증 확인 (SSH 키 또는 HTTPS PAT) |
-| Claude Code에서 명령 안 됨 | `claude plugin list`에서 oma 확인. 없으면 `install.sh` 재실행 |
+| Claude Code에서 명령 안 됨 | `claude plugin list`에서 `oma@oma-marketplace` 확인. 없으면 `install.sh` 재실행 후 `/reload-plugins` |
 
 <Cards>
   <Card title="시나리오로 보기" href="/docs/scenarios">

@@ -1,0 +1,149 @@
+---
+title: 릴리즈
+description: 버전별 변경 이력
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+현재 버전: **v0.7.2** (2026-05-20)
+
+업데이트:
+
+```bash
+cd ~/.oma && git pull && ./install.sh
+```
+
+설치 후 `oma --version`으로 확인한다.
+
+---
+
+## v0.7.2 <small>2026-05-20</small>
+
+v0.7 hardening 후속의 parity/회귀 방지 릴리즈다.
+
+### 변경
+
+- `oma adr new`가 하위 디렉터리에서도 프로젝트 root의 `adr/`에 ADR을 생성한다.
+- `oma adr new --affects "token, token"`로 생성 시점에 영향 범위를 채울 수 있다.
+- Bash PreToolUse에도 guardrail을 적용해 `cd packages/... && touch file` 같은 우회 경로를 막는다.
+- 신규 프로젝트 ADR template에 `affects:` / `review_due:` 헤더를 포함한다.
+- portable CLI, Claude plugin manifest, marketplace manifest, Codex manifest, CHANGELOG 버전 동기화 테스트를 추가했다.
+
+## v0.7.1 <small>2026-05-20</small>
+
+v0.7.0에서 발견된 fail-open/false-positive 진단 경로를 좁힌 패치 릴리즈다.
+
+### 수정
+
+- `install.sh`가 `oma doctor` 환경 실패(exit 2)를 더 이상 숨기지 않는다. bootstrap 필요(exit 3)는 안내 후 허용한다.
+- status 없는 ADR을 본문 길이만으로 accepted 처리하던 doctor fallback을 제거했다.
+- evidence `schema_version` 검증을 grep substring이 아니라 JSON parse + top-level field 확인으로 강화했다.
+
+## v0.7.0 <small>2026-05-20</small>
+
+voice-hub dogfood에서 발견된 ADR skeleton-key 결함을 해소하는 보안 강화 릴리즈다.
+
+### 변경
+
+- ADR gate가 `affects:` 라인만 정식 영향 범위 선언으로 인정한다. `## 영향` 자유서술은 권한 토큰으로 쓰지 않는다.
+- 승인 ADR에도 `review_due` 만료 검사와 50% coverage ceiling을 적용한다.
+- 활성 프로젝트에서 `project_profile.yaml`이 없으면 쓰기 작업을 deny-by-default로 전환한다.
+- ADR 날짜/검사 기준을 UTC와 결정적 정렬 기준으로 고정했다.
+- `oma check`에 ADR scope overreach와 review_due 누락/만료 warn rule을 추가했다.
+
+### 마이그레이션
+
+- 기존 ADR에 `review_due:`를 추가하고, skeleton-key 형태의 광범위 영향 범위를 실제 영향 토큰 중심으로 정리했다.
+
+---
+
+## v0.6.0 <small>2026-05-19</small>
+
+CONTEXT.md 도입과 install.sh 개선이 핵심이다.
+
+### 추가
+
+- `CONTEXT.md` 도입: 도메인 용어 정본을 ADR과 분리해 관리 (ADR 0058)
+- `/oma:init`과 `bin/oma init`에 `CONTEXT.md` scaffold 생성 흐름 추가
+- Claude Code/Codex init helper에 기존 ADR 기반 glossary migration 안내 추가
+
+### 변경
+
+- ADR 작성 기준에 3-조건 게이트 추가: hard to reverse, surprising without context, real trade-off
+- 설치 스크립트가 Claude Code local marketplace 등록/업데이트와 plugin 설치/활성화를 함께 처리
+- Claude plugin metadata와 portable CLI version을 `0.6.0`으로 갱신
+
+### 수정
+
+- `OMA-RULE-1002`가 ADR 코드블록/인라인 코드의 placeholder 예시를 false positive로 잡던 문제 수정 (ADR 0059)
+- 일부 slash command frontmatter의 `argument-hint` 값을 YAML 문자열로 명시
+
+---
+
+## v0.5.0 <small>2026-05-18</small>
+
+oma를 사내 팀이 실제로 쓸 수 있는 상태로 만드는 릴리즈.
+
+### 추가
+
+- `install.sh` — clone 후 한 줄로 설치 (bin/oma + Claude Code 플러그인)
+- `bin/oma` CLI — 도구 독립 결정적 surface (ADR 0042)
+- Codex CLI 1급 지원 (ADR 0050, 0056)
+- CI 재사용 템플릿 `templates/ci/` (GitHub Actions, GitLab CI)
+- 정책 카탈로그 보강: base 5개, mobile 5개, korean-si 2개
+- Evidence JSON 스키마 `plugin/schemas/evidence.md` (ADR 0048)
+- `/oma:strict` 명령 — 자동 사전 점검 강도 토글 (ADR 0044, 0045)
+- 문서 사이트 `docs/` — Fumadocs 기반, 시나리오 4개 포함
+- `CHANGELOG.md` 도입
+
+### 변경
+
+- `plugin.json` version 0.4.2 → 0.5.0
+- 시작하기 문서를 `install.sh` 기준으로 재작성
+- README를 docs 사이트 기준으로 재작성
+- mobile을 core에서 분리, 선택형 overlay로 전환 (ADR 0028, 0049)
+- oma 식별자 통일: mobile-aind → oma (ADR 0046)
+
+### 수정
+
+- verify-fixtures.sh를 evidence schema에 정합 (ADR 0048 §5)
+- UserPromptSubmit hook LLM 차단 이슈 제거
+- hooks.json schema 마이그레이션
+
+---
+
+## v0.4.2 <small>2026-05-14</small>
+
+### 추가
+
+- voice-hub dogfood 발견 11건 반영
+- README 트러블슈팅 보강
+
+---
+
+## v0.4.0 <small>2026-05-12</small>
+
+### 변경
+
+- mobile-aind → oma 식별자 통일
+- HUD 동작 상태 표시
+
+---
+
+## v0.3.0 <small>2026-05-10</small>
+
+### 추가
+
+- ADR 0042 승인: enforcement 아키텍처 Layer 분리
+- ADR 0043~0048 6건 추가
+- strict mode opt-in toggle (ADR 0044/0045/0048)
+
+---
+
+## v0.2.0 <small>2026-05-08</small>
+
+### 추가
+
+- `/oma:doctor` 명령
+- `/oma:check` template-only 감지 강화
+- hook opt-in marker: init 이후에만 가드레일 활성화
